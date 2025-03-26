@@ -1,8 +1,11 @@
 -- Baseprite by Creamy! v1.0
 
+local reorderingMode = false
+
 local function createColorIndices(sprite, cel, palette)
     local colorToIndex = {}
     local img = cel.image
+    
   
     -- Build a map of colors from the provided palette
     for i, colorInfo in ipairs(palette) do
@@ -195,9 +198,9 @@ local function createColorIndices(sprite, cel, palette)
     }
   
     dlg:button{
-      text = "+ Add Color",
+      text = reorderingMode and "Done Reordering" or "Reorder Colors",
       onclick = function()
-        table.insert(palette, { color = Color{ r = 0, g = 0, b = 0, a = 255 } })
+        reorderingMode = not reorderingMode
         createDialog()
       end
     }
@@ -221,19 +224,49 @@ local function createColorIndices(sprite, cel, palette)
       
     dlg:newrow()
     dlg:separator()
-  
-    for i, colorInfo in ipairs(palette) do
-      dlg:newrow()
-      dlg:color{
-        id = "color_" .. i,
-        color = colorInfo.color,
-        onclick = function() pickColor(i) end,
-        onchange = function(ev)
-          palette[i].color = ev.color
+      
+      for i, colorInfo in ipairs(palette) do
+        dlg:color{
+          id = "color_" .. i,
+          color = colorInfo.color,
+          label = "",
+          onchange = function(ev)
+            palette[i].color = ev.color
+          end
+        }
+      
+        if reorderingMode and i < #palette then
+          dlg:button{
+            text = "▲",
+            enabled = i > 1,
+            onclick = function()
+              palette[i], palette[i-1] = palette[i-1], palette[i]
+              createDialog()
+            end
+          }
+      
+          dlg:button{
+            text = "▼",
+            enabled = i < #palette,
+            onclick = function()
+              palette[i], palette[i+1] = palette[i+1], palette[i]
+              createDialog()
+            end
+          }
+        end
+      
+        dlg:newrow()
+      end
+
+
+      dlg:button{
+        text = "+ Add Color",
+        onclick = function()
+          table.insert(palette, { color = Color{ r = 0, g = 0, b = 0, a = 255 } })
+          createDialog()
         end
       }
       
-    end
   
     dlg:newrow()
     dlg:separator()
