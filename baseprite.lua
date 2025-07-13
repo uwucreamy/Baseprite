@@ -9,11 +9,12 @@
 --   \:\/:/  /      /:/  /    \:\/:/  /    \:\ \/__/        \/__/     |:|\/__/  \:\__\ \/__/        \:\ \/__/  
 --    \::/__/      /:/  /      \::/  /      \:\__\                    |:|  |     \/__/               \:\__\    
 --     ~~          \/__/        \/__/        \/__/                     \|__|                          \/__/    
---                                      Baseprite by Creamy! v2.0
+--                                                                           Baseprite by Creamy! v2.1
 
 -- fetch palette from "basepaint.xyz/api/theme/day#"
 local function fetchBasepaintPalette(day)
-  local scriptPath = debug.getinfo(1, "S").source:match("@(.*/)")
+  local src = debug.getinfo(1, "S").source
+  local scriptPath = src:match("@(.*[\\/])")
   local tmpPath = scriptPath .. "basepaint_theme_data.json"
   local url = "https://basepaint.xyz/api/theme/" .. day
   local curl = 'curl -s "' .. url .. '" -o "' .. tmpPath .. '"'
