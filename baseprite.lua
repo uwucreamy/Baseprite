@@ -10,7 +10,7 @@
 --    \::/__/      /:/  /      \::/  /      \:\__\                    |:|  |     \/__/               \:\__\    
 --     ~~          \/__/        \/__/        \/__/                     \|__|                          \/__/    
 
--- Baseprite by Creamy! v2.2
+-- Baseprite by Creamy! 🐸💙🖌️ v2.3
 
 -- fetch palette from "basepaint.xyz/api/theme/day#"
 local function fetchBasepaintPalette(day)
@@ -216,7 +216,7 @@ local function createColorIndices(sprite, cel, palette)
   end
 
 -- function to import pixels from JSON text
-  local function importBasepaintJSON(json_text, palette, frameIndex)
+  local function importBasepaintJSON(json_text, palette, frameIndex, layerName)
     if not json_text or json_text == "" then
       app.alert("No JSON provided.")
       return 0
@@ -292,7 +292,11 @@ local function createColorIndices(sprite, cel, palette)
 
     -- add new layer & cel placed at (minX,minY) / can be off-canvas
     local layer = sprite:newLayer()
-    layer.name = "Basepasted Layer"
+      if layerName and layerName ~= "" then
+        layer.name = layerName
+      else
+        layer.name = "Basepasted Layer"
+      end
     local frame = sprite.frames[frameIndex or 1]
     sprite:newCel(layer, frame, img, Point(minX, minY))
 
@@ -520,6 +524,49 @@ local function createColorIndices(sprite, cel, palette)
 
     dlg:newrow()
     dlg:separator()
+
+    -- single-row palette grid
+    do
+      local rowColors = {}
+      for i, c in ipairs(palette) do
+        rowColors[i] = c.color
+      end
+
+      dlg:shades{
+        id = "paletteRow",
+        label = "",
+        colors = rowColors,
+        mode = "pick",
+        onclick = function(ev)
+          -- find which swatch was clicked by comparing against the row colors
+          local function same(c1, c2)
+            return c1.red == c2.red and c1.green == c2.green and
+                  c1.blue == c2.blue and c1.alpha == c2.alpha
+          end
+
+          local idx = nil
+          for i, c in ipairs(rowColors) do
+            if same(c, ev.color) then
+              idx = i
+              break
+            end
+          end
+          if not idx or idx > #palette then
+            return -- ignore clicks on anything unexpected
+          end
+
+          selectedSwatch = idx
+          if ev.button == MouseButton.RIGHT then
+            app.bgColor = palette[idx].color   -- right-click = BG color
+          else
+            app.fgColor = palette[idx].color   -- left-click = FG color
+          end
+        end
+      }
+    end
+
+    dlg:newrow()
+    dlg:separator()
   
     local layerNames = getLayerNames()
 
@@ -608,50 +655,6 @@ local function createColorIndices(sprite, cel, palette)
     dlg:newrow()
     dlg:separator()
 
-      
-    -- single-row palette grid
-    do
-      local rowColors = {}
-      for i, c in ipairs(palette) do
-        rowColors[i] = c.color
-      end
-
-      dlg:shades{
-        id = "paletteRow",
-        label = "",
-        colors = rowColors,
-        mode = "pick",
-        onclick = function(ev)
-          -- find which swatch was clicked by comparing against the row colors
-          local function same(c1, c2)
-            return c1.red == c2.red and c1.green == c2.green and
-                  c1.blue == c2.blue and c1.alpha == c2.alpha
-          end
-
-          local idx = nil
-          for i, c in ipairs(rowColors) do
-            if same(c, ev.color) then
-              idx = i
-              break
-            end
-          end
-          if not idx or idx > #palette then
-            return -- ignore clicks on anything unexpected
-          end
-
-          selectedSwatch = idx
-          if ev.button == MouseButton.RIGHT then
-            app.bgColor = palette[idx].color   -- right-click = BG color
-          else
-            app.fgColor = palette[idx].color   -- left-click = FG color
-          end
-        end
-      }
-    end
-
-    dlg:newrow()
-    dlg:separator()
-
     -- import basepaint code && add it to a new layer
     dlg:button{
       text = "Import Pixels",
@@ -693,7 +696,8 @@ local function createColorIndices(sprite, cel, palette)
               txt = rtfToPlain(txt)
             end
 
-            local count = importBasepaintJSON(txt, palette, frameIndex)
+            local fname = path:match("([^/\\]+)$") or "Imported"
+            local count = importBasepaintJSON(txt, palette, frameIndex, fname)
             fd:close()
             if count > 0 then createDialog() end
           end
